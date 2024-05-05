@@ -15,6 +15,8 @@ type Config struct {
 	LogLevel string `split_words:"true" default:"info"`
 
 	DbPath string `split_words:"true" default:"activity.duckdb"`
+
+	DiscordToken string `split_words:"true" required:"true"`
 }
 
 func initLoggingConfig(config Config) error {
