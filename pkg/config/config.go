@@ -17,6 +17,7 @@ type Config struct {
 	DbPath string `split_words:"true" default:"activity.duckdb"`
 
 	DiscordToken string `split_words:"true" required:"true"`
+	GuildId      string `split_words:"true" required:"true"`
 }
 
 func initLoggingConfig(config Config) error {
