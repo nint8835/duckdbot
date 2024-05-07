@@ -10,7 +10,7 @@ var messagesTableQuery = `CREATE TABLE IF NOT EXISTS messages (
 	channel_id varchar NOT NULL,
 	author_id varchar NOT NULL,
 	content varchar NOT NULL,
-	time_sent timestamp NOT NULL,
+	time_sent timestamptz NOT NULL,
 	CONSTRAINT messages_pk PRIMARY KEY (id)
 );`
 
