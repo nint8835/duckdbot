@@ -14,10 +14,46 @@ var messagesTableQuery = `CREATE TABLE IF NOT EXISTS messages (
 	CONSTRAINT messages_pk PRIMARY KEY (id)
 );`
 
+var dropUsersTableQuery = `DROP TABLE IF EXISTS users;`
+
+var usersTableQuery = `CREATE TABLE IF NOT EXISTS users (
+    id varchar NOT NULL,
+    username varchar NOT NULL,
+    display_name varchar NOT NULL,
+);`
+
 func initDb(db *sql.DB) error {
 	_, err := db.Exec(messagesTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating messages table: %w", err)
+	}
+
+	err = dropTempTables(db)
+	if err != nil {
+		return fmt.Errorf("error dropping temp tables: %w", err)
+	}
+
+	err = createTempTables(db)
+	if err != nil {
+		return fmt.Errorf("error creating temp tables: %w", err)
+	}
+
+	return nil
+}
+
+func dropTempTables(db *sql.DB) error {
+	_, err := db.Exec(dropUsersTableQuery)
+	if err != nil {
+		return fmt.Errorf("error dropping users table: %w", err)
+	}
+
+	return nil
+}
+
+func createTempTables(db *sql.DB) error {
+	_, err := db.Exec(usersTableQuery)
+	if err != nil {
+		return fmt.Errorf("error creating users table: %w", err)
 	}
 
 	return nil

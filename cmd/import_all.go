@@ -25,8 +25,19 @@ var importAllCmd = &cobra.Command{
 		session, err := discordgo.New("Bot " + cfg.DiscordToken)
 		checkError(err, "failed to create session")
 
-		session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
+		session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuildMembers)
 		err = session.Open()
+
+		members, err := session.GuildMembers(cfg.GuildId, "", 1000)
+		checkError(err, "failed to get members")
+
+		for _, member := range members {
+			err = database.InsertUser(db, member)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to insert user")
+				continue
+			}
+		}
 
 		importerInst := importer.Importer{Session: session, Db: db}
 
