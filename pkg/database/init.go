@@ -22,6 +22,14 @@ var usersTableQuery = `CREATE TABLE IF NOT EXISTS users (
     display_name varchar NOT NULL,
 );`
 
+var dropChannelsTableQuery = `DROP TABLE IF EXISTS channels;`
+
+var channelsTableQuery = `CREATE TABLE IF NOT EXISTS channels (
+    id varchar NOT NULL,
+    name varchar NOT NULL,
+    parent_id varchar,
+);`
+
 func initDb(db *sql.DB) error {
 	_, err := db.Exec(messagesTableQuery)
 	if err != nil {
@@ -47,6 +55,11 @@ func dropTempTables(db *sql.DB) error {
 		return fmt.Errorf("error dropping users table: %w", err)
 	}
 
+	_, err = db.Exec(dropChannelsTableQuery)
+	if err != nil {
+		return fmt.Errorf("error dropping channels table: %w", err)
+	}
+
 	return nil
 }
 
@@ -54,6 +67,11 @@ func createTempTables(db *sql.DB) error {
 	_, err := db.Exec(usersTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating users table: %w", err)
+	}
+
+	_, err = db.Exec(channelsTableQuery)
+	if err != nil {
+		return fmt.Errorf("error creating channels table: %w", err)
 	}
 
 	return nil

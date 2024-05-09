@@ -47,6 +47,12 @@ var importAllCmd = &cobra.Command{
 		for _, channel := range channels {
 			log.Info().Msgf("Importing channel %s", channel.Name)
 
+			err = database.InsertChannel(db, channel)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to insert channel")
+				continue
+			}
+
 			err = importerInst.ImportChannel(channel.ID)
 			if err != nil {
 				log.Error().Err(err).Msg("failed to import channel")
@@ -64,6 +70,12 @@ var importAllCmd = &cobra.Command{
 			for _, thread := range channelThreads.Threads {
 				log.Info().Msgf("Importing thread %s", thread.Name)
 
+				err = database.InsertThread(db, thread)
+				if err != nil {
+					log.Error().Err(err).Msg("failed to insert thread")
+					continue
+				}
+
 				err = importerInst.ImportChannel(thread.ID)
 				if err != nil {
 					log.Error().Err(err).Msg("failed to import thread")
@@ -80,6 +92,12 @@ var importAllCmd = &cobra.Command{
 			// TODO: Handle pagination
 			for _, thread := range channelThreads.Threads {
 				log.Info().Msgf("Importing thread %s", thread.Name)
+
+				err = database.InsertThread(db, thread)
+				if err != nil {
+					log.Error().Err(err).Msg("failed to insert thread")
+					continue
+				}
 
 				err = importerInst.ImportChannel(thread.ID)
 				if err != nil {

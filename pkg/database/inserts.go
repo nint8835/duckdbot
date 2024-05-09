@@ -36,3 +36,31 @@ func InsertUser(db *sql.DB, user *discordgo.Member) error {
 
 	return nil
 }
+
+func InsertChannel(db *sql.DB, channel *discordgo.Channel) error {
+	_, err := db.Exec(
+		"INSERT INTO channels (id, name, parent_id) VALUES ($1, $2, $3)",
+		channel.ID,
+		channel.Name,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func InsertThread(db *sql.DB, thread *discordgo.Channel) error {
+	_, err := db.Exec(
+		"INSERT INTO channels (id, name, parent_id) VALUES ($1, $2, $3)",
+		thread.ID,
+		thread.Name,
+		thread.ParentID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
