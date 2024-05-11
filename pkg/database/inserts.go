@@ -82,3 +82,17 @@ func InsertThread(db *sql.DB, thread *discordgo.Channel) error {
 
 	return nil
 }
+
+func InsertEmoji(db *sql.DB, emoji *discordgo.Emoji) error {
+	_, err := db.Exec(
+		"INSERT INTO emoji (id, name, is_animated) VALUES ($1, $2, $3)",
+		emoji.ID,
+		emoji.Name,
+		emoji.Animated,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

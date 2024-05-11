@@ -32,6 +32,15 @@ var channelsTableQuery = `CREATE TABLE IF NOT EXISTS channels (
     parent_id varchar,
 );`
 
+var dropEmojiTableQuery = `DROP TABLE IF EXISTS emoji;`
+
+var emojiTableQuery = `CREATE TABLE IF NOT EXISTS emoji (
+    id varchar NOT NULL,
+    name varchar NOT NULL,
+    is_animated boolean NOT NULL DEFAULT false,
+    usage_str AS (format('<{}:{}:{}>', CASE WHEN is_animated THEN 'a' ELSE '' END, name, id)),
+);`
+
 func initDb(db *sql.DB) error {
 	_, err := db.Exec(messagesTableQuery)
 	if err != nil {
@@ -62,6 +71,11 @@ func dropTempTables(db *sql.DB) error {
 		return fmt.Errorf("error dropping channels table: %w", err)
 	}
 
+	_, err = db.Exec(dropEmojiTableQuery)
+	if err != nil {
+		return fmt.Errorf("error dropping emoji table: %w", err)
+	}
+
 	return nil
 }
 
@@ -74,6 +88,11 @@ func createTempTables(db *sql.DB) error {
 	_, err = db.Exec(channelsTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating channels table: %w", err)
+	}
+
+	_, err = db.Exec(emojiTableQuery)
+	if err != nil {
+		return fmt.Errorf("error creating emoji table: %w", err)
 	}
 
 	return nil

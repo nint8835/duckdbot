@@ -108,6 +108,19 @@ var importAllCmd = &cobra.Command{
 				continue
 			}
 		}
+
+		emoji, err := session.GuildEmojis(cfg.GuildId)
+		checkError(err, "failed to get emojis")
+
+		for _, e := range emoji {
+			log.Info().Msgf("Importing emoji %s", e.Name)
+
+			err = database.InsertEmoji(db, e)
+			if err != nil {
+				log.Error().Err(err).Msgf("failed to insert emoji %s", e.Name)
+				continue
+			}
+		}
 	},
 }
 
