@@ -45,3 +45,22 @@ func GetNewestMessageIdForChannel(db *sql.DB, channelId string) (string, error) 
 
 	return id, nil
 }
+
+func GetAllAuthors(db *sql.DB) ([]string, error) {
+	rows, err := db.Query(`SELECT DISTINCT author_id FROM main.messages`)
+	if err != nil {
+		return nil, err
+	}
+
+	var authors []string
+	for rows.Next() {
+		var author string
+		err = rows.Scan(&author)
+		if err != nil {
+			return nil, err
+		}
+		authors = append(authors, author)
+	}
+
+	return authors, nil
+}

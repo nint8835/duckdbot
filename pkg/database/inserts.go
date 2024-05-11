@@ -23,12 +23,30 @@ func InsertMessage(db *sql.DB, message *discordgo.Message) error {
 	return nil
 }
 
-func InsertUser(db *sql.DB, user *discordgo.Member) error {
+func InsertUser(db *sql.DB, user *discordgo.User) error {
 	_, err := db.Exec(
-		"INSERT INTO users (id, username, display_name) VALUES ($1, $2, $3)",
+		"INSERT INTO users (id, username, display_name, in_guild, is_bot) VALUES ($1, $2, $3, $4, $5)",
+		user.ID,
+		user.Username,
+		cmp.Or(user.GlobalName, user.Username),
+		false,
+		user.Bot,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func InsertMember(db *sql.DB, user *discordgo.Member) error {
+	_, err := db.Exec(
+		"INSERT INTO users (id, username, display_name, in_guild, is_bot) VALUES ($1, $2, $3, $4, $5)",
 		user.User.ID,
 		user.User.Username,
 		cmp.Or(user.Nick, user.User.GlobalName, user.User.Username),
+		true,
+		user.User.Bot,
 	)
 	if err != nil {
 		return err

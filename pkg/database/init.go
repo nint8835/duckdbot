@@ -20,6 +20,8 @@ var usersTableQuery = `CREATE TABLE IF NOT EXISTS users (
     id varchar NOT NULL,
     username varchar NOT NULL,
     display_name varchar NOT NULL,
+    is_bot boolean NOT NULL DEFAULT false,
+    in_guild boolean NOT NULL DEFAULT false,
 );`
 
 var dropChannelsTableQuery = `DROP TABLE IF EXISTS channels;`

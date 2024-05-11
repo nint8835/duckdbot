@@ -28,18 +28,7 @@ var importAllCmd = &cobra.Command{
 		session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuildMembers)
 		err = session.Open()
 
-		members, err := session.GuildMembers(cfg.GuildId, "", 1000)
-		checkError(err, "failed to get members")
-
-		for _, member := range members {
-			err = database.InsertUser(db, member)
-			if err != nil {
-				log.Error().Err(err).Msg("failed to insert user")
-				continue
-			}
-		}
-
-		importerInst := importer.Importer{Session: session, Db: db}
+		importerInst := importer.Importer{Session: session, Db: db, Config: cfg}
 
 		channels, err := session.GuildChannels(cfg.GuildId)
 		checkError(err, "failed to get channels")
@@ -104,6 +93,19 @@ var importAllCmd = &cobra.Command{
 					log.Error().Err(err).Msg("failed to import thread")
 					continue
 				}
+			}
+		}
+
+		authors, err := database.GetAllAuthors(db)
+		checkError(err, "failed to get authors")
+
+		for _, author := range authors {
+			log.Info().Msgf("Importing user %s", author)
+
+			err = importerInst.ImportUser(author)
+			if err != nil {
+				log.Error().Err(err).Msgf("failed to import user %s", author)
+				continue
 			}
 		}
 	},

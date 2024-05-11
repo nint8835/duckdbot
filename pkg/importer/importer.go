@@ -7,6 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/rs/zerolog/log"
 
+	"github.com/nint8835/duckdbot/pkg/config"
 	"github.com/nint8835/duckdbot/pkg/database"
 )
 
@@ -35,6 +36,7 @@ func newerMessageFetcher(channelId string, initialMessageId string, session *dis
 type Importer struct {
 	Db      *sql.DB
 	Session *discordgo.Session
+	Config  *config.Config
 }
 
 func (i *Importer) importMessages(messages []*discordgo.Message) error {
@@ -97,6 +99,31 @@ func (i *Importer) ImportChannel(channelId string) error {
 	}
 
 	log.Debug().Msgf("Finished importing messages for channel %s", channelId)
+
+	return nil
+}
+
+func (i *Importer) ImportUser(userId string) error {
+	guildMember, err := i.Session.GuildMember(i.Config.GuildId, userId)
+	if err == nil {
+		err = database.InsertMember(i.Db, guildMember)
+		if err != nil {
+			return fmt.Errorf("error inserting member: %w", err)
+		}
+		return nil
+	}
+
+	log.Debug().Msgf("User %s is not a member of the guild, importing as a user", userId)
+
+	user, err := i.Session.User(userId)
+	if err != nil {
+		return fmt.Errorf("error getting user: %w", err)
+	}
+
+	err = database.InsertUser(i.Db, user)
+	if err != nil {
+		return fmt.Errorf("error inserting user: %w", err)
+	}
 
 	return nil
 }
