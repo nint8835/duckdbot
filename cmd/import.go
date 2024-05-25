@@ -30,7 +30,7 @@ var importCmd = &cobra.Command{
 
 		importerInst := importer.Importer{Session: session, Db: db}
 
-		err = importerInst.ImportChannel(args[0])
+		err = importerInst.ImportChannelMessages(args[0])
 		checkError(err, "failed to import channel")
 	},
 }

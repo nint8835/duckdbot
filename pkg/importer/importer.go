@@ -77,7 +77,132 @@ func (i *Importer) paginateMessages(channelId string, initialMessageId string, f
 	return nil
 }
 
-func (i *Importer) ImportChannel(channelId string) error {
+func (i *Importer) ImportGuild(guildId string) error {
+	log.Info().Msg("Importing guild")
+
+	channels, err := i.Session.GuildChannels(guildId)
+	if err != nil {
+		return fmt.Errorf("error getting guild channels: %w", err)
+	}
+
+	for _, channel := range channels {
+		log.Info().Msgf("Importing channel %s", channel.Name)
+
+		err = database.InsertChannel(i.Db, channel)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to insert channel")
+			continue
+		}
+
+		err = i.ImportChannelMessages(channel.ID)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to import channel")
+			continue
+		}
+
+		log.Info().Msgf("Importing threads for channel %s", channel.Name)
+		channelThreads, err := i.Session.ThreadsArchived(channel.ID, nil, 0)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get threads")
+			continue
+		}
+
+		// TODO: Handle pagination
+		for _, thread := range channelThreads.Threads {
+			log.Info().Msgf("Importing thread %s", thread.Name)
+
+			err = database.InsertThread(i.Db, thread)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to insert thread")
+				continue
+			}
+
+			err = i.ImportChannelMessages(thread.ID)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to import thread")
+				continue
+			}
+		}
+
+		channelThreads, err = i.Session.ThreadsActive(channel.ID)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get threads")
+			continue
+		}
+
+		// TODO: Handle pagination
+		for _, thread := range channelThreads.Threads {
+			log.Info().Msgf("Importing thread %s", thread.Name)
+
+			err = database.InsertThread(i.Db, thread)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to insert thread")
+				continue
+			}
+
+			err = i.ImportChannelMessages(thread.ID)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to import thread")
+				continue
+			}
+		}
+	}
+
+	guildMembers, err := i.Session.GuildMembers(guildId, "", 1000)
+	if err != nil {
+		return fmt.Errorf("error getting guild members: %w", err)
+	}
+
+	for _, guildMember := range guildMembers {
+		log.Info().Msgf("Importing member %s", guildMember.User.Username)
+
+		err = database.InsertMember(i.Db, guildMember)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to insert member")
+			continue
+		}
+	}
+
+	missingAuthors, err := database.GetMissingAuthors(i.Db)
+	if err != nil {
+		return fmt.Errorf("error getting missing authors: %w", err)
+	}
+
+	for _, author := range missingAuthors {
+		log.Info().Msgf("Importing user %s", author)
+
+		user, err := i.Session.User(author)
+		if err != nil {
+			log.Error().Err(err).Msgf("failed to get user %s", author)
+			continue
+		}
+
+		err = database.InsertUser(i.Db, user)
+		if err != nil {
+			log.Error().Err(err).Msgf("failed to import user %s", author)
+			continue
+		}
+	}
+
+	emojis, err := i.Session.GuildEmojis(guildId)
+	if err != nil {
+		return fmt.Errorf("error getting guild emojis: %w", err)
+	}
+
+	for _, emoji := range emojis {
+		log.Info().Msgf("Importing emoji %s", emoji.Name)
+
+		err = database.InsertEmoji(i.Db, emoji)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to insert emoji")
+			continue
+		}
+	}
+
+	return nil
+}
+
+func (i *Importer) ImportChannelMessages(channelId string) error {
 	log.Debug().Msgf("Importing newer messages for channel %s", channelId)
 
 	newestMessageId, err := database.GetNewestMessageIdForChannel(i.Db, channelId)
