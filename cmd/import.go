@@ -11,8 +11,7 @@ import (
 
 var importCmd = &cobra.Command{
 	Use:   "import",
-	Short: "Import data into the database",
-	Args:  cobra.ExactArgs(1),
+	Short: "Import all data into the database",
 
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.Load()
@@ -25,13 +24,13 @@ var importCmd = &cobra.Command{
 		session, err := discordgo.New("Bot " + cfg.DiscordToken)
 		checkError(err, "failed to create session")
 
-		session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
+		session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuildMembers)
 		err = session.Open()
 
-		importerInst := importer.Importer{Session: session, Db: db}
+		importerInst := importer.Importer{Session: session, Db: db, Config: cfg}
 
-		err = importerInst.ImportChannelMessages(args[0])
-		checkError(err, "failed to import channel")
+		err = importerInst.ImportGuild(cfg.GuildId)
+		checkError(err, "failed to import guild")
 	},
 }
 
