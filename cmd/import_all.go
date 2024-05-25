@@ -96,13 +96,31 @@ var importAllCmd = &cobra.Command{
 			}
 		}
 
-		authors, err := database.GetAllAuthors(db)
-		checkError(err, "failed to get authors")
+		guildMembers, err := session.GuildMembers(cfg.GuildId, "", 1000)
+		checkError(err, "failed to get guild members")
 
-		for _, author := range authors {
+		for _, member := range guildMembers {
+			log.Info().Msgf("Importing member %s", member.User.Username)
+
+			err = database.InsertMember(db, member)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to insert member")
+			}
+		}
+
+		missingAuthors, err := database.GetMissingAuthors(db)
+		checkError(err, "failed to get missing")
+
+		for _, author := range missingAuthors {
 			log.Info().Msgf("Importing user %s", author)
 
-			err = importerInst.ImportUser(author)
+			user, err := session.User(author)
+			if err != nil {
+				log.Error().Err(err).Msgf("failed to get user %s", author)
+				continue
+			}
+
+			err = database.InsertUser(db, user)
 			if err != nil {
 				log.Error().Err(err).Msgf("failed to import user %s", author)
 				continue
