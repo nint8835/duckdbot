@@ -29,7 +29,7 @@ var importCmd = &cobra.Command{
 
 		importerInst := importer.Importer{Session: session, Db: db, Config: cfg}
 
-		err = importerInst.ImportGuild(cfg.GuildId)
+		err = importerInst.ImportAll()
 		checkError(err, "failed to import guild")
 	},
 }
