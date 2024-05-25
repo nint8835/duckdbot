@@ -1,6 +1,9 @@
 package importer
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/rs/zerolog/log"
 
@@ -39,6 +42,31 @@ func (i *Importer) importChannel(channel *discordgo.Channel) {
 	}
 }
 
+func (i *Importer) paginateArchivedThreads(channelId string, callback func(*discordgo.Channel)) error {
+	var lastThreadTime *time.Time
+
+	hasMoreThreads := true
+
+	for hasMoreThreads {
+		threads, err := i.Session.ThreadsArchived(channelId, lastThreadTime, 100)
+		if err != nil {
+			return fmt.Errorf("error getting archived threads: %w", err)
+		}
+
+		for _, thread := range threads.Threads {
+			callback(thread)
+		}
+
+		hasMoreThreads = threads.HasMore
+
+		if len(threads.Threads) != 0 {
+			lastThreadTime = &threads.Threads[len(threads.Threads)-1].ThreadMetadata.ArchiveTimestamp
+		}
+	}
+
+	return nil
+}
+
 func (i *Importer) importThreads(channel *discordgo.Channel) {
 	log.Info().Msgf("Importing threads for channel %s", channel.Name)
 	channelThreads, err := i.Session.ThreadsArchived(channel.ID, nil, 0)
@@ -47,9 +75,10 @@ func (i *Importer) importThreads(channel *discordgo.Channel) {
 		return
 	}
 
-	// TODO: Handle pagination
-	for _, thread := range channelThreads.Threads {
-		i.importThread(thread)
+	err = i.paginateArchivedThreads(channel.ID, i.importThread)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to import archived threads")
+		return
 	}
 
 	channelThreads, err = i.Session.ThreadsActive(channel.ID)
@@ -58,7 +87,6 @@ func (i *Importer) importThreads(channel *discordgo.Channel) {
 		return
 	}
 
-	// TODO: Handle pagination
 	for _, thread := range channelThreads.Threads {
 		i.importThread(thread)
 	}
