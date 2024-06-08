@@ -41,6 +41,12 @@ var emojiTableQuery = `CREATE TABLE IF NOT EXISTS emoji (
     usage_str AS (format('<{}:{}:{}>', CASE WHEN is_animated THEN 'a' ELSE '' END, name, id)),
 );`
 
+var dropMetaTableQuery = `DROP TABLE IF EXISTS meta;`
+
+var metaTableQuery = `CREATE TABLE IF NOT EXISTS meta (
+    created_at timestamptz NOT NULL DEFAULT now(),
+);`
+
 func initDb(db *sql.DB) error {
 	_, err := db.Exec(messagesTableQuery)
 	if err != nil {
@@ -61,7 +67,12 @@ func initDb(db *sql.DB) error {
 }
 
 func dropTempTables(db *sql.DB) error {
-	_, err := db.Exec(dropUsersTableQuery)
+	_, err := db.Exec(dropMetaTableQuery)
+	if err != nil {
+		return fmt.Errorf("error dropping meta table: %w", err)
+	}
+
+	_, err = db.Exec(dropUsersTableQuery)
 	if err != nil {
 		return fmt.Errorf("error dropping users table: %w", err)
 	}
@@ -80,7 +91,17 @@ func dropTempTables(db *sql.DB) error {
 }
 
 func createTempTables(db *sql.DB) error {
-	_, err := db.Exec(usersTableQuery)
+	_, err := db.Exec(metaTableQuery)
+	if err != nil {
+		return fmt.Errorf("error creating meta table: %w", err)
+	}
+
+	_, err = db.Exec("INSERT INTO meta DEFAULT VALUES;")
+	if err != nil {
+		return fmt.Errorf("error inserting into meta table: %w", err)
+	}
+
+	_, err = db.Exec(usersTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating users table: %w", err)
 	}
