@@ -18,6 +18,8 @@ type Config struct {
 
 	DiscordToken string `split_words:"true" required:"true"`
 	GuildId      string `split_words:"true" required:"true"`
+
+	ImportOlder bool `split_words:"true" default:"false"`
 }
 
 func initLoggingConfig(config Config) error {

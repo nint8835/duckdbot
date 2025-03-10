@@ -82,12 +82,14 @@ func (i *Importer) importChannelMessages(channelId string) error {
 		log.Debug().Msg("Channel has no previous messages imported, no newer messages to import")
 	}
 
-	log.Debug().Msgf("Importing older messages for channel %s", channelId)
+	if i.Config.ImportOlder {
+		log.Debug().Msgf("Importing older messages for channel %s", channelId)
 
-	oldestMessageId, _ := database.GetOldestMessageIdForChannel(i.Db, channelId)
-	err = i.paginateMessages(channelId, oldestMessageId, olderMessageFetcher, i.importMessages)
-	if err != nil {
-		return fmt.Errorf("error importing older messages: %w", err)
+		oldestMessageId, _ := database.GetOldestMessageIdForChannel(i.Db, channelId)
+		err = i.paginateMessages(channelId, oldestMessageId, olderMessageFetcher, i.importMessages)
+		if err != nil {
+			return fmt.Errorf("error importing older messages: %w", err)
+		}
 	}
 
 	log.Debug().Msgf("Finished importing messages for channel %s", channelId)
