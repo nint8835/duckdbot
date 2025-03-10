@@ -82,7 +82,7 @@ func (i *Importer) importChannelMessages(channelId string) error {
 		log.Debug().Msg("Channel has no previous messages imported, no newer messages to import")
 	}
 
-	if i.Config.ImportOlder {
+	if i.Config.ImportOlder || err != nil {
 		log.Debug().Msgf("Importing older messages for channel %s", channelId)
 
 		oldestMessageId, _ := database.GetOldestMessageIdForChannel(i.Db, channelId)
