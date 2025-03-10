@@ -69,11 +69,33 @@ func (i *Importer) paginateMessages(channelId string, initialMessageId string, f
 	return nil
 }
 
-func (i *Importer) importChannelMessages(channelId string) error {
+func (i *Importer) importChannelMessages(channel *discordgo.Channel) error {
+	// Channel has no messages
+	if channel.LastMessageID == "" {
+		return nil
+	}
+
+	lastMessageSent, err := discordgo.SnowflakeTimestamp(channel.LastMessageID)
+	if err != nil {
+		return fmt.Errorf("error getting last message timestamp: %w", err)
+	}
+
+	channelId := channel.ID
+
 	log.Debug().Msgf("Importing newer messages for channel %s", channelId)
 
 	newestMessageId, err := database.GetNewestMessageIdForChannel(i.Db, channelId)
 	if err == nil {
+		lastMessageStored, err := discordgo.SnowflakeTimestamp(newestMessageId)
+		if err != nil {
+			return fmt.Errorf("error getting newest message timestamp: %w", err)
+		}
+
+		if !lastMessageSent.After(lastMessageStored) {
+			log.Debug().Msg("Channel has all messages imported, no newer messages to import")
+			return nil
+		}
+
 		err = i.paginateMessages(channelId, newestMessageId, newerMessageFetcher, i.importMessages)
 		if err != nil {
 			return fmt.Errorf("error importing newer messages: %w", err)

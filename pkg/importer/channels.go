@@ -31,7 +31,7 @@ func (i *Importer) importChannel(channel *discordgo.Channel) {
 		return
 	}
 
-	err = i.importChannelMessages(channel.ID)
+	err = i.importChannelMessages(channel)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to import channel")
 		return
@@ -101,7 +101,7 @@ func (i *Importer) importThread(thread *discordgo.Channel) {
 		return
 	}
 
-	err = i.importChannelMessages(thread.ID)
+	err = i.importChannelMessages(thread)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to import thread")
 		return
