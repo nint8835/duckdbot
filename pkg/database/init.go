@@ -47,10 +47,23 @@ var metaTableQuery = `CREATE TABLE IF NOT EXISTS meta (
     created_at timestamptz NOT NULL DEFAULT now(),
 );`
 
+var userCacheTableQuery = `CREATE TABLE IF NOT EXISTS _user_cache (
+	id varchar NOT NULL,
+	username varchar NOT NULL,
+	display_name varchar NOT NULL,
+	is_bot boolean NOT NULL DEFAULT false,
+	cached_at timestamptz NOT NULL DEFAULT now(),
+);`
+
 func initDb(db *sql.DB) error {
 	_, err := db.Exec(messagesTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating messages table: %w", err)
+	}
+
+	_, err = db.Exec(userCacheTableQuery)
+	if err != nil {
+		return fmt.Errorf("error creating user cache table: %w", err)
 	}
 
 	err = dropTempTables(db)

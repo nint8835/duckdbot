@@ -3,6 +3,7 @@ package database
 import (
 	"cmp"
 	"database/sql"
+	"fmt"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -95,4 +96,47 @@ func InsertEmoji(db *sql.DB, emoji *discordgo.Emoji) error {
 	}
 
 	return nil
+}
+
+func InsertCachedUser(db *sql.DB, user *discordgo.User) error {
+	_, err := db.Exec(
+		"INSERT INTO _user_cache (id, username, display_name, is_bot, cached_at) VALUES ($1, $2, $3, $4, now())",
+		user.ID,
+		user.Username,
+		user.GlobalName,
+		user.Bot,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateCachedUser(db *sql.DB, user *discordgo.User) error {
+	_, err := db.Exec(
+		"UPDATE _user_cache SET username = $2, display_name = $3, is_bot = $4, cached_at = now() WHERE id = $1",
+		user.ID,
+		user.Username,
+		user.GlobalName,
+		user.Bot,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpsertCachedUser(db *sql.DB, user *discordgo.User) error {
+	cached, err := GetCachedUser(db, user.ID)
+	if err != nil {
+		return fmt.Errorf("error getting cached user: %w", err)
+	}
+
+	if cached == nil {
+		return InsertCachedUser(db, user)
+	}
+
+	return UpdateCachedUser(db, user)
 }
