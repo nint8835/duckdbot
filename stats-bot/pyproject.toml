@@ -9,6 +9,7 @@ dependencies = [
     "duckdb>=1.4.1",
     "pydantic-ai-slim[openai]>=1.9.1",
     "pydantic-settings>=2.11.0",
+    "pytz>=2025.2",
 ]
 
 [dependency-groups]

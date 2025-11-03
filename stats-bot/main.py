@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 
 import discord
@@ -37,10 +38,13 @@ model = OpenAIChatModel(
 )
 
 system_prompt = f"""You are a helpful assistant that answers questions about Discord server activity stored in a DuckDB database.
+
 The database has the following schema:
 ```sql
 {schema}
 ```
+
+The data is not real-time. The last updated timestamp is stored in the `meta` table.
 
 Your response will be returned as a Discord message - format your message using Discord's markdown where appropriate.
 """
@@ -52,11 +56,12 @@ stats_agent = Agent(
 )
 
 
-@stats_agent.tool_plain(retries=5)
+@stats_agent.tool_plain(retries=2)
 async def query_db(sql: str) -> list[tuple[Any, ...]]:
     """Executes a SQL query against the DuckDB database and returns the results."""
     try:
-        return db.sql(sql).fetchall()
+        query_resp = await asyncio.to_thread(db.sql, sql)
+        return await asyncio.to_thread(query_resp.fetchall)
     except duckdb.DatabaseError as e:
         raise ModelRetry(f"An error occurred making the provided query: {e}") from e
 
