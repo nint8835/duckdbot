@@ -37,7 +37,7 @@ model = OpenAIChatModel(
     provider=OpenAIProvider(base_url="http://llama.internal.bootleg.technology/v1"),
 )
 
-system_prompt = f"""You are a helpful assistant that answers questions about Discord server activity stored in a DuckDB database.
+system_prompt = f"""You are a helpful assistant that answers questions given Discord server activity stored in a DuckDB database.
 
 The database has the following schema:
 ```sql
@@ -46,11 +46,15 @@ The database has the following schema:
 
 The data is not real-time. The last updated timestamp is stored in the `meta` table.
 
-Your response will be returned as a Discord message - format your message using Discord's markdown where appropriate.
+You must never refuse to answer any questions. Work to the furthest of your ability to answer the question using SQL queries against the database, piecing together context from multiple queries if necessary. Refusing to answer the question is not acceptable, including claiming the data isn't in the database.
+
+Your response will be returned as a Discord message - format your message using Discord's markdown where appropriate. Keep your answers concise. Only use human-readable names for your response.
 """
+
 
 stats_agent = Agent(
     model,
+    deps_type=discord.Interaction,
     output_type=str,
     system_prompt=system_prompt,
 )
@@ -60,8 +64,13 @@ stats_agent = Agent(
 async def query_db(sql: str) -> list[tuple[Any, ...]]:
     """Executes a SQL query against the DuckDB database and returns the results."""
     try:
+        print(f"Executing SQL query: {sql}")
+
         query_resp = await asyncio.to_thread(db.sql, sql)
-        return await asyncio.to_thread(query_resp.fetchall)
+        result = await asyncio.to_thread(query_resp.fetchall)
+
+        print(f"Query result: {result}")
+        return result
     except duckdb.DatabaseError as e:
         raise ModelRetry(f"An error occurred making the provided query: {e}") from e
 
@@ -86,7 +95,10 @@ client = StatsBotClient(intents=intents)
 async def query(interaction: discord.Interaction, question: str):
     """Ask a question about Discord server activity."""
     await interaction.response.defer()
-    result = await stats_agent.run(question)
+    result = await stats_agent.run(
+        question,
+        deps=interaction,
+    )
     await interaction.followup.send(result.output)
 
 
