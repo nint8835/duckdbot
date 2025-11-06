@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/nint8835/duckdbot/pkg/database"
+	"github.com/nint8835/duckdbot/pkg/embedding"
 )
 
 type messageFetcher func(channelId string, initialMessageId string, session *discordgo.Session, prevMessages []*discordgo.Message) ([]*discordgo.Message, error)
@@ -117,4 +118,48 @@ func (i *Importer) importChannelMessages(channel *discordgo.Channel) error {
 	log.Debug().Msgf("Finished importing messages for channel %s", channelId)
 
 	return nil
+}
+
+func (i *Importer) embedMessages() {
+	unembeddedMessages, err := database.GetUnembeddedMessages(i.Db)
+	if err != nil {
+		log.Error().Err(err).Msg("error getting unembedded messages")
+		return
+	}
+
+	loops := 0
+
+	for len(unembeddedMessages) > 0 && loops < 20 {
+		log.Debug().Msgf("Found %d unembedded messages", len(unembeddedMessages))
+		if len(unembeddedMessages) == 0 {
+			return
+		}
+
+		pipelineInputs := make([]string, len(unembeddedMessages))
+		for idx, message := range unembeddedMessages {
+			pipelineInputs[idx] = message.Content
+		}
+
+		embeddings, err := embedding.Pipeline.RunPipeline(pipelineInputs)
+		if err != nil {
+			log.Error().Err(err).Msg("error generating embeddings")
+			return
+		}
+
+		for idx, message := range unembeddedMessages {
+			log.Debug().Msgf("Inserting embedding for message %s", message.MessageId)
+			err = database.InsertMessageEmbedding(i.Db, message.MessageId, embeddings.Embeddings[idx])
+			if err != nil {
+				log.Error().Err(err).Msg("error inserting message embedding")
+				return
+			}
+		}
+
+		unembeddedMessages, err = database.GetUnembeddedMessages(i.Db)
+		if err != nil {
+			log.Error().Err(err).Msg("error getting unembedded messages")
+			return
+		}
+		loops++
+	}
 }

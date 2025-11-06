@@ -19,6 +19,9 @@ type Importer struct {
 func (i *Importer) ImportAll() error {
 	log.Info().Msg("Importing guild")
 
+	i.embedMessages()
+	return nil
+
 	i.importChannels()
 
 	i.importMembers()

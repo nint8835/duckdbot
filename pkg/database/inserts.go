@@ -193,3 +193,16 @@ func DeleteInvalidCachedUser(db *sql.DB, userId string) error {
 
 	return nil
 }
+
+func InsertMessageEmbedding(db *sql.DB, messageId string, embedding []float32) error {
+	_, err := db.Exec(
+		"INSERT INTO message_embeddings (message_id, embedding) VALUES ($1, $2)",
+		messageId,
+		embedding,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
