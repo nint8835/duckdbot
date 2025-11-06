@@ -55,6 +55,17 @@ var userCacheTableQuery = `CREATE TABLE IF NOT EXISTS _user_cache (
 	cached_at timestamptz NOT NULL DEFAULT now(),
 );`
 
+var embeddingsTableQuery = `CREATE TABLE IF NOT EXISTS message_embeddings (
+	message_id varchar NOT NULL,
+	embedding FLOAT[384] NOT NULL,
+);`
+
+var embeddingsIndexQuery = `BEGIN;
+CREATE INDEX IF NOT EXISTS idx_message_embeddings_embedding ON message_embeddings USING HNSW (embedding);
+COMMIT;`
+
+var dropEmbeddingsIndexQuery = `DROP INDEX IF EXISTS idx_message_embeddings_embedding;`
+
 func initDb(db *sql.DB) error {
 	_, err := db.Exec(messagesTableQuery)
 	if err != nil {
@@ -64,6 +75,16 @@ func initDb(db *sql.DB) error {
 	_, err = db.Exec(userCacheTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating user cache table: %w", err)
+	}
+
+	_, err = db.Exec(embeddingsTableQuery)
+	if err != nil {
+		return fmt.Errorf("error creating embeddings table: %w", err)
+	}
+
+	err = dropTempIndexes(db)
+	if err != nil {
+		return fmt.Errorf("error dropping temp indexes: %w", err)
 	}
 
 	err = dropTempTables(db)
@@ -103,6 +124,15 @@ func dropTempTables(db *sql.DB) error {
 	return nil
 }
 
+func dropTempIndexes(db *sql.DB) error {
+	_, err := db.Exec(dropEmbeddingsIndexQuery)
+	if err != nil {
+		return fmt.Errorf("error dropping embeddings index: %w", err)
+	}
+
+	return nil
+}
+
 func createTempTables(db *sql.DB) error {
 	_, err := db.Exec(metaTableQuery)
 	if err != nil {
@@ -127,6 +157,15 @@ func createTempTables(db *sql.DB) error {
 	_, err = db.Exec(emojiTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating emoji table: %w", err)
+	}
+
+	return nil
+}
+
+func CreateTempIndexes(db *sql.DB) error {
+	_, err := db.Exec(embeddingsIndexQuery)
+	if err != nil {
+		return fmt.Errorf("error creating embeddings index: %w", err)
 	}
 
 	return nil

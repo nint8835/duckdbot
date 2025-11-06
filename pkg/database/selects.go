@@ -135,3 +135,39 @@ func GetCachedUser(db *sql.DB, userId string) (*CachedUser, error) {
 
 	return &user, nil
 }
+
+type UnembeddedMessage struct {
+	MessageId string
+	Content   string
+}
+
+func GetUnembeddedMessages(db *sql.DB) ([]UnembeddedMessage, error) {
+	rows, err := db.Query(
+		`SELECT
+			m.id,
+			m.content
+		FROM
+			main.messages m
+		LEFT JOIN
+			main.message_embeddings me ON m.id = me.message_id
+		WHERE
+			me.message_id IS NULL
+		LIMIT 100`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []UnembeddedMessage
+	for rows.Next() {
+		var message UnembeddedMessage
+		err = rows.Scan(&message.MessageId, &message.Content)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+
+	return messages, nil
+}

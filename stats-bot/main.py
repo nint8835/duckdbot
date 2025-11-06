@@ -3,11 +3,17 @@ from typing import Any
 
 import discord
 import duckdb
+from duckdb.typing import VARCHAR
 from discord import app_commands
 from pydantic_ai import Agent, ModelRetry
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 class Config(BaseSettings):
@@ -27,6 +33,16 @@ db = duckdb.connect(config.db_path, read_only=True)
 db.sql("SET enable_external_access = false")
 db.sql("SET allow_community_extensions = false")
 db.sql("SET lock_configuration = true")
+
+
+def embed(sentence: str) -> np.ndarray:
+    return embedding_model.encode(sentence)
+
+
+db.create_function("embed", embed, [VARCHAR], "FLOAT[384]")
+
+print(db.sql("SELECT message_id FROM message_embeddings ORDER BY array_distance(embedding, embed('Hello world!')) DESC LIMIT 1").fetchall())
+raise SystemExit()
 
 schema = "\n".join(
     [table[0] for table in db.sql("SELECT sql FROM duckdb_tables()").fetchall()]
@@ -73,6 +89,26 @@ async def query_db(sql: str) -> list[tuple[Any, ...]]:
         return result
     except duckdb.DatabaseError as e:
         raise ModelRetry(f"An error occurred making the provided query: {e}") from e
+
+
+@stats_agent.tool_plain()
+async def find_similar_messages(text: str, count: int) -> list[float]:
+    """Find the messages most similar to a given string."""
+    print(f"Finding {count} messages similar to: {text}")
+
+    embedding = await asyncio.to_thread(embedding_model.encode, text)
+
+    query_resp = await asyncio.to_thread(
+        db.sql,
+        """
+        SELECT message_id FROM message_embeddings
+        ORDER BY array_distance(embedding, CAST(? AS FLOAT[384])) ASC
+        LIMIT ?;
+        """,
+        params=(embedding, count),
+    )
+
+    return await asyncio.to_thread(query_resp.fetchall)
 
 
 guild = discord.Object(id=config.guild_id)
