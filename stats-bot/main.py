@@ -33,7 +33,7 @@ schema = "\n".join(
 )
 
 model = OpenAIChatModel(
-    "Qwen3-Coder-30B",
+    "gpt-oss-20b",
     provider=OpenAIProvider(base_url="http://llama.internal.bootleg.technology/v1"),
 )
 
