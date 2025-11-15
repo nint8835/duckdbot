@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from typing import Any
 
 import discord
@@ -19,6 +20,7 @@ class Config(BaseSettings):
     db_path: str = "../activity.duckdb"
     discord_token: str
     guild_id: int
+    llm_api_key: str
 
 
 config = Config()  # type: ignore
@@ -34,7 +36,9 @@ schema = "\n".join(
 
 model = OpenAIChatModel(
     "gpt-oss-20b",
-    provider=OpenAIProvider(base_url="http://llama.internal.bootleg.technology/v1"),
+    provider=OpenAIProvider(
+        base_url="http://llm.internal.bootleg.technology", api_key=config.llm_api_key
+    ),
 )
 
 system_prompt = f"""You are a helpful assistant that answers questions given Discord server activity stored in a DuckDB database.
@@ -98,6 +102,7 @@ async def query(interaction: discord.Interaction, question: str):
     result = await stats_agent.run(
         question,
         deps=interaction,
+        model_settings={"extra_body": {"litellm_session_id": str(uuid.uuid4())}},
     )
     await interaction.followup.send(result.output)
 
