@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/nint8835/discordgo"
 )
 
 func InsertMessage(db *sql.DB, message *discordgo.Message) error {

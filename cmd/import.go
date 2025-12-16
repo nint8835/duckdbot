@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/nint8835/discordgo"
 	"github.com/spf13/cobra"
 
 	"github.com/nint8835/duckdbot/pkg/config"

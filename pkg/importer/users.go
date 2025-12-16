@@ -1,7 +1,7 @@
 package importer
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/nint8835/discordgo"
 	"github.com/rs/zerolog/log"
 
 	"github.com/nint8835/duckdbot/pkg/database"

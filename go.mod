@@ -3,16 +3,17 @@ module github.com/nint8835/duckdbot
 go 1.24.3
 
 require (
-	github.com/bwmarrin/discordgo v0.28.2-0.20250522172923-b17704c79361
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/marcboeker/go-duckdb v1.8.1
+	github.com/nint8835/discordgo v0.0.0-20251216232832-fa1dbfaacd5e
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 )
 
 require (
 	github.com/apache/arrow/go/v17 v17.0.0 // indirect
+	github.com/bwmarrin/discordgo v0.28.2-0.20250522172923-b17704c79361 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/google/flatbuffers v24.3.25+incompatible // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
