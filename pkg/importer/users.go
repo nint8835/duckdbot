@@ -58,9 +58,26 @@ func (i *Importer) importMissingUsers() {
 			continue
 		}
 
+		invalid, err := database.GetInvalidCachedUser(i.Db, author)
+		if err != nil {
+			log.Error().Err(err).Msgf("failed to get invalid cached user %s", author)
+			continue
+		}
+
+		if invalid {
+			log.Debug().Msgf("Skipping invalid cached user %s", author)
+			continue
+		}
+
 		user, err := i.Session.User(author)
 		if err != nil {
 			log.Error().Err(err).Msgf("failed to get user %s", author)
+
+			err = database.InsertInvalidCachedUser(i.Db, author)
+			if err != nil {
+				log.Error().Err(err).Msgf("failed to cache invalid user %s", author)
+			}
+
 			continue
 		}
 
@@ -73,6 +90,12 @@ func (i *Importer) importMissingUsers() {
 		err = database.UpsertCachedUser(i.Db, user)
 		if err != nil {
 			log.Error().Err(err).Msgf("failed to cache user %s", author)
+			continue
+		}
+
+		err = database.DeleteInvalidCachedUser(i.Db, author)
+		if err != nil {
+			log.Error().Err(err).Msgf("failed to delete invalid cached user %s", author)
 			continue
 		}
 	}

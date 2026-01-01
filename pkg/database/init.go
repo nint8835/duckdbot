@@ -55,6 +55,11 @@ var userCacheTableQuery = `CREATE TABLE IF NOT EXISTS _user_cache (
 	cached_at timestamptz NOT NULL DEFAULT now(),
 );`
 
+var invalidUserCacheTableQuery = `CREATE TABLE IF NOT EXISTS _invalid_user_cache (
+	id varchar NOT NULL,
+	cached_at timestamptz NOT NULL DEFAULT now(),
+);`
+
 func initDb(db *sql.DB) error {
 	_, err := db.Exec(messagesTableQuery)
 	if err != nil {
@@ -64,6 +69,11 @@ func initDb(db *sql.DB) error {
 	_, err = db.Exec(userCacheTableQuery)
 	if err != nil {
 		return fmt.Errorf("error creating user cache table: %w", err)
+	}
+
+	_, err = db.Exec(invalidUserCacheTableQuery)
+	if err != nil {
+		return fmt.Errorf("error creating invalid user cache table: %w", err)
 	}
 
 	err = dropTempTables(db)

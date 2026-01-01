@@ -140,3 +140,56 @@ func UpsertCachedUser(db *sql.DB, user *discordgo.User) error {
 
 	return UpdateCachedUser(db, user)
 }
+
+func InsertInvalidCachedUser(db *sql.DB, userId string) error {
+	_, err := db.Exec(
+		"INSERT INTO _invalid_user_cache (id, cached_at) VALUES ($1, now())",
+		userId,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateInvalidCachedUser(db *sql.DB, userId string) error {
+	_, err := db.Exec(
+		"UPDATE _invalid_user_cache SET cached_at = now() WHERE id = $1",
+		userId,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpsertInvalidCachedUser(db *sql.DB, userId string) error {
+	var exists bool
+	err := db.QueryRow(
+		"SELECT EXISTS(SELECT 1 FROM _invalid_user_cache WHERE id = $1)",
+		userId,
+	).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("error checking if invalid cached user exists: %w", err)
+	}
+
+	if !exists {
+		return InsertInvalidCachedUser(db, userId)
+	}
+
+	return UpdateInvalidCachedUser(db, userId)
+}
+
+func DeleteInvalidCachedUser(db *sql.DB, userId string) error {
+	_, err := db.Exec(
+		"DELETE FROM _invalid_user_cache WHERE id = $1",
+		userId,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

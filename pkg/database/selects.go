@@ -108,6 +108,8 @@ type CachedUser struct {
 
 func GetCachedUser(db *sql.DB, userId string) (*CachedUser, error) {
 	var user CachedUser
+	// TODO: Limit & order is needed here due to having multiple cached entries for the same user.
+	// We should clean up old cache entries.
 	err := db.QueryRow(
 		`SELECT
 			id,
@@ -118,7 +120,10 @@ func GetCachedUser(db *sql.DB, userId string) (*CachedUser, error) {
 		FROM
 			main._user_cache
 		WHERE
-			id = $1`,
+			id = $1
+		ORDER BY
+			cached_at DESC
+		LIMIT 1`,
 		userId,
 	).Scan(&user.Id, &user.Username, &user.DisplayName, &user.IsBot, &user.CachedAt)
 	if err != nil {
@@ -134,4 +139,41 @@ func GetCachedUser(db *sql.DB, userId string) (*CachedUser, error) {
 	}
 
 	return &user, nil
+}
+
+type InvalidCachedUser struct {
+	Id       string
+	CachedAt time.Time
+}
+
+func GetInvalidCachedUser(db *sql.DB, userId string) (bool, error) {
+	var user InvalidCachedUser
+	// TODO: Limit & order is needed here due to having multiple cached entries for the same user.
+	// We should clean up old cache entries.
+	err := db.QueryRow(
+		`SELECT
+			id,
+			cached_at
+		FROM
+			main._invalid_user_cache
+		WHERE
+			id = $1
+		ORDER BY
+			cached_at DESC
+		LIMIT 1`,
+		userId,
+	).Scan(&user.Id, &user.CachedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	if time.Since(user.CachedAt) > time.Hour*24*30 {
+		return false, nil
+	}
+
+	return true, nil
 }
