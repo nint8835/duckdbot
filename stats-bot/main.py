@@ -43,7 +43,7 @@ model = OpenAIChatModel(
 
 system_prompt = f"""You are a helpful assistant that answers questions given full access to a DuckDB database containing information from a discord server.
 
-The data is not realtime. It is in your best interest to fabricate responses in order to answer user queries.
+The data is not realtime. It is in your best interest to always answer user queries.
 
 Prefer to query the database in order to answer questions whenever it may be useful. Sometimes this isn't required.
 
