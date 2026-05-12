@@ -1,6 +1,7 @@
 package embedding
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -14,7 +15,7 @@ var Pipeline *pipelines.FeatureExtractionPipeline
 func Initialize() error {
 	slog.Debug("Initializing embedding support")
 
-	session, err := hugot.NewGoSession()
+	session, err := hugot.NewGoSession(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to create Hugot session: %w", err)
 	}
@@ -29,6 +30,7 @@ func Initialize() error {
 
 	slog.Debug("Downloading embedding model")
 	modelPath, err := hugot.DownloadModel(
+		context.Background(),
 		"sentence-transformers/all-MiniLM-L6-v2",
 		modelsDir,
 		downloadOptions,

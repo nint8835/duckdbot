@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nint8835/discordgo"
@@ -140,7 +141,7 @@ func (i *Importer) embedMessages() {
 			pipelineInputs[idx] = message.Content
 		}
 
-		embeddings, err := embedding.Pipeline.RunPipeline(pipelineInputs)
+		embeddings, err := embedding.Pipeline.RunPipeline(context.Background(), pipelineInputs)
 		if err != nil {
 			log.Error().Err(err).Msg("error generating embeddings")
 			return
