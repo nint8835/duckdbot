@@ -1,11 +1,12 @@
 import asyncio
+import re
 import uuid
 from typing import Any
 
 import discord
 import duckdb
 from discord import app_commands
-from pydantic_ai import Agent, ModelRetry
+from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,7 +36,7 @@ schema = "\n".join(
 )
 
 model = OpenAIChatModel(
-    "gpt-oss-20b",
+    "north-mini-code",
     provider=OpenAIProvider(
         base_url="http://llm.internal.bootleg.technology", api_key=config.llm_api_key
     ),
@@ -81,6 +82,17 @@ async def query_db(sql: str) -> list[tuple[Any, ...]]:
         return result
     except duckdb.DatabaseError as e:
         raise ModelRetry(f"An error occurred making the provided query: {e}") from e
+
+@stats_agent.output_validator
+async def validate_output(_: RunContext, output: str) -> str:
+    """Validates that the output is a string that can be sent as a discord message."""
+    if not isinstance(output, str):
+        raise ModelRetry("Output must be a string.")
+    if len(output) > 2000:
+        raise ModelRetry("Output must be less than 2000 characters.")
+    if re.search(r"\| ?-+ ?\| ?-+ ?\|", output):
+        raise ModelRetry("Discord does not support markdown tables.")
+    return output
 
 
 guild = discord.Object(id=config.guild_id)
